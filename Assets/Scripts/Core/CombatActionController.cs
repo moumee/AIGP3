@@ -10,6 +10,7 @@ public class CombatActionController : MonoBehaviour
     [SerializeField] private float dodgeImpulse = 2f;
     [SerializeField] private float dodgeInvincibleDuration = 0.35f;
     [SerializeField] private float blockDuration = 0.75f;
+    [SerializeField] private float moveAnimationHoldDuration = 0.12f;
 
     [SerializeField] private Rigidbody body;
     [SerializeField] private CooldownSystem cooldownSystem;
@@ -23,6 +24,7 @@ public class CombatActionController : MonoBehaviour
     private bool isRotationLocked;
     private Vector3 lockedFacingDirection;
     private int lastMoveFrame = -1;
+    private float lastMoveTime = -1f;
 
     public float MoveSpeed
     {
@@ -65,7 +67,10 @@ public class CombatActionController : MonoBehaviour
 
     private void LateUpdate()
     {
-        animatorDriver?.SetMoving(lastMoveFrame == Time.frameCount && !IsBusy);
+        bool movedRecently = lastMoveFrame == Time.frameCount
+            || (lastMoveTime >= 0f && Time.time - lastMoveTime <= moveAnimationHoldDuration);
+
+        animatorDriver?.SetMoving(movedRecently && !IsBusy);
         ApplyRotationLock();
     }
 
@@ -79,6 +84,7 @@ public class CombatActionController : MonoBehaviour
         body.MovePosition(body.position + horizontalDirection * moveSpeed * Time.deltaTime);
         Face(horizontalDirection);
         lastMoveFrame = Time.frameCount;
+        lastMoveTime = Time.time;
     }
 
     public void Face(Vector3 direction)
@@ -172,6 +178,7 @@ public class CombatActionController : MonoBehaviour
         IsInvincible = false;
         UnlockRotation();
         lastMoveFrame = -1;
+        lastMoveTime = -1f;
         animatorDriver?.ResetAnimationState();
     }
 

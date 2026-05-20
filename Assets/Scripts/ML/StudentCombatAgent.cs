@@ -32,14 +32,11 @@ public class StudentCombatAgent : Agent
     private const float AttackDistance = 1.8f;
     private const float DangerDistance = 2.2f;
     private const float DefenderPreferredDistance = 3.2f;
-    private const float MoveHoldDuration = 0.25f;
-    private const float CloseRange = 2.8f;
+    private const float AttackFacingAngle = 50f;
 
     private float previousSelfHealth;
     private float previousOpponentHealth;
     private float previousDistance;
-    private Vector3 requestedMoveDirection;
-    private float requestedMoveExpireTime;
 
     public override void Initialize()
     {
@@ -51,20 +48,9 @@ public class StudentCombatAgent : Agent
         FillDefaultReferences();
     }
 
-    private void Update()
-    {
-        if (CanAct()
-            && requestedMoveDirection.sqrMagnitude > 0.0001f
-            && Time.time <= requestedMoveExpireTime)
-        {
-            actionController.Move(requestedMoveDirection);
-        }
-    }
-
     public override void OnEpisodeBegin()
     {
         FillDefaultReferences();
-        requestedMoveDirection = Vector3.zero;
 
         if (episodeManager != null)
         {
@@ -116,9 +102,10 @@ public class StudentCombatAgent : Agent
         bool blockReady = cooldownSystem != null && cooldownSystem.IsBlockReady();
         bool dodgeReady = cooldownSystem != null && cooldownSystem.IsDodgeReady();
 
-        UpdateRequestedMove(moveAction);
+        ApplyMovement(moveAction);
         ApplySkill(skillAction, moveAction);
         RewardActionChoice(skillAction, distanceBeforeAction, attackReady, blockReady, dodgeReady);
+        RewardMissedAttackOpportunity(skillAction, distanceBeforeAction, attackReady);
         RewardHealthDelta();
         RewardPositioning(moveAction);
         if (CheckEpisodeEnd())
@@ -178,31 +165,13 @@ public class StudentCombatAgent : Agent
             && !opponent.IsDead;
     }
 
-    private void UpdateRequestedMove(int moveAction)
-    {
-        Vector3 moveDirection = GetMoveDirection(moveAction);
-
-        if (moveDirection.sqrMagnitude > 0.0001f)
-        {
-            requestedMoveDirection = moveDirection;
-            requestedMoveExpireTime = Time.time + MoveHoldDuration;
-        }
-    }
-
-    private Vector3 GetMoveDirection(int moveAction)
+    private void ApplyMovement(int moveAction)
     {
         Vector3 forward = DirectionToOpponent();
         Vector3 left = Quaternion.Euler(0f, -90f, 0f) * forward;
         Vector3 moveDirection = Vector3.zero;
-        float distance = DistanceToOpponent();
 
-        if (moveAction == MoveStay
-            && role == StudentCombatRole.Attacker
-            && distance > AttackDistance)
-        {
-            moveDirection = forward;
-        }
-        else if (moveAction == MoveForward)
+        if (moveAction == MoveForward)
         {
             moveDirection = forward;
         }
@@ -219,7 +188,10 @@ public class StudentCombatAgent : Agent
             moveDirection = -left;
         }
 
-        return moveDirection;
+        if (moveDirection.sqrMagnitude > 0.0001f)
+        {
+            actionController.Move(moveDirection);
+        }
     }
 
     private void ApplySkill(int skillAction, int moveAction)
@@ -265,11 +237,11 @@ public class StudentCombatAgent : Agent
         {
             if (!attackReady)
             {
-                AddReward(-0.02f);
+                AddReward(actionController != null && actionController.IsAttacking ? -0.002f : -0.015f);
             }
-            else if (distanceBeforeAction <= AttackDistance && IsFacingOpponent(50f))
+            else if (IsInAttackOpportunity(distanceBeforeAction))
             {
-                AddReward(role == StudentCombatRole.Attacker ? 0.04f : 0.02f);
+                AddReward(role == StudentCombatRole.Attacker ? 0.06f : 0.02f);
             }
             else
             {
@@ -282,9 +254,9 @@ public class StudentCombatAgent : Agent
             {
                 AddReward(-0.02f);
             }
-            else if (IsOpponentThreatening(distanceBeforeAction))
+            else if (role == StudentCombatRole.Defender && IsOpponentThreatening(distanceBeforeAction))
             {
-                AddReward(role == StudentCombatRole.Defender ? 0.05f : 0.035f);
+                AddReward(0.04f);
             }
         }
         else if (skillAction == SkillDodge)
@@ -295,8 +267,19 @@ public class StudentCombatAgent : Agent
             }
             else if (IsOpponentThreatening(distanceBeforeAction) || self.CurrentHealthRatio < 0.35f)
             {
-                AddReward(role == StudentCombatRole.Defender ? 0.05f : 0.04f);
+                AddReward(role == StudentCombatRole.Defender ? 0.04f : 0.02f);
             }
+        }
+    }
+
+    private void RewardMissedAttackOpportunity(int skillAction, float distanceBeforeAction, bool attackReady)
+    {
+        if (role == StudentCombatRole.Attacker
+            && attackReady
+            && skillAction != SkillAttack
+            && IsInAttackOpportunity(distanceBeforeAction))
+        {
+            AddReward(-0.015f);
         }
     }
 
@@ -331,29 +314,14 @@ public class StudentCombatAgent : Agent
 
         if (role == StudentCombatRole.Attacker)
         {
-            if (distance > AttackDistance && moveAction == MoveStay)
-            {
-                AddReward(-0.015f);
-            }
-
             if (distance > AttackDistance && distanceDelta > 0f)
             {
                 AddReward(0.01f);
             }
 
-            if (distance <= AttackDistance && IsFacingOpponent(50f))
+            if (distance <= AttackDistance && IsFacingOpponent(AttackFacingAngle))
             {
-                AddReward(0.01f);
-            }
-
-            if (distance <= CloseRange && (moveAction == MoveLeft || moveAction == MoveRight))
-            {
-                AddReward(0.006f);
-            }
-
-            if (distance < AttackDistance * 0.65f && moveAction == MoveBackward)
-            {
-                AddReward(0.006f);
+                AddReward(0.002f);
             }
         }
         else
@@ -411,6 +379,11 @@ public class StudentCombatAgent : Agent
         return distance <= DangerDistance
             && ((opponentAction != null && opponentAction.IsAttacking)
                 || (opponentCooldown != null && opponentCooldown.IsAttackReady()));
+    }
+
+    private bool IsInAttackOpportunity(float distance)
+    {
+        return distance <= AttackDistance && IsFacingOpponent(AttackFacingAngle);
     }
 
     private bool IsFacingOpponent(float maxAngle)

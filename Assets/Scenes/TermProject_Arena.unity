@@ -2372,6 +2372,7 @@ MonoBehaviour:
   dodgeImpulse: 7
   dodgeInvincibleDuration: 0.35
   blockDuration: 0.75
+  moveAnimationHoldDuration: 0.12
   body: {fileID: 1475817612}
   cooldownSystem: {fileID: 1475817620}
   character: {fileID: 1475817621}
@@ -2453,7 +2454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DecisionPeriod: 5
   DecisionStep: 0
-  TakeActionsBetweenDecisions: 1
+  TakeActionsBetweenDecisions: 0
 --- !u!114 &1475817625
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3070,6 +3071,7 @@ MonoBehaviour:
   dodgeImpulse: 7
   dodgeInvincibleDuration: 0.35
   blockDuration: 0.75
+  moveAnimationHoldDuration: 0.12
   body: {fileID: 1958932424}
   cooldownSystem: {fileID: 1958932430}
   character: {fileID: 1958932429}
@@ -3456,7 +3458,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DecisionPeriod: 5
   DecisionStep: 0
-  TakeActionsBetweenDecisions: 1
+  TakeActionsBetweenDecisions: 0
 --- !u!114 &6082262751175829148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3501,9 +3503,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: e5a7a68f6de6102498e32f51b697b0e1, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 88b102ece87e7b443889135361a0b342, type: 3}
   m_InferenceDevice: 0
-  m_BehaviorType: 2
+  m_BehaviorType: 0
   m_BehaviorName: CombatAgent
   TeamId: 0
   m_UseChildSensors: 1
