@@ -173,7 +173,7 @@ public class StudentBTStrategy : MonoBehaviour
     private bool ShouldFinishBlow()
     {
         return target.CurrentHealthRatio < finishBlowHealthRatio
-               && DistanceToTarget() < 2
+               && DistanceToTarget() < attackDistance
                && cooldownSystem != null
                && cooldownSystem.IsAttackReady();
     }
