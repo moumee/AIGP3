@@ -29,7 +29,7 @@ public class StudentAttackerBT: MonoBehaviour
         FillDefaultReferences();
         BuildTree();
         
-        _agentUI = GetComponentInChildren<AgentUI>();
+        
     }
 
     private void Reset()
@@ -134,6 +134,11 @@ public class StudentAttackerBT: MonoBehaviour
         if (cooldownSystem == null)
         {
             cooldownSystem = GetComponent<CooldownSystem>();
+        }
+
+        if (_agentUI == null)
+        {
+            _agentUI = GetComponentInChildren<AgentUI>();
         }
     }
 

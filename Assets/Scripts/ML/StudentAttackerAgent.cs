@@ -77,6 +77,7 @@ public class StudentAttackerAgent : Agent
     private bool _prevSelfWasInvincible;
     private bool _waitingForEpisodeReset;
 
+    private AgentUI _agentUI;
 
     public override void Initialize()
     {
@@ -155,6 +156,7 @@ public class StudentAttackerAgent : Agent
         if (move == MoveApproach)
         {
             actionController.Move(DirectionToTarget());
+            _agentUI.UpdateStatusText("Move Approach", 0.2f, 0);
         }
 
         // ── 스킬 ──────────────────────────────────
@@ -166,6 +168,7 @@ public class StudentAttackerAgent : Agent
                 {
                     actionController.Face(DirectionToTarget());
                     actionController.Attack();
+                    _agentUI.UpdateStatusText("Attack", 0.5f, 2);
                 }
                 break;
 
@@ -175,6 +178,7 @@ public class StudentAttackerAgent : Agent
                 {
                     actionController.Face(DirectionToTarget());
                     actionController.Block();
+                    _agentUI.UpdateStatusText("Block", 0.5f, 2);
                 }
                 break;
 
@@ -188,6 +192,7 @@ public class StudentAttackerAgent : Agent
 
                     actionController.Face(dodgeDir);
                     actionController.Dodge(dodgeDir);
+                    _agentUI.UpdateStatusText("Left Dodge", 0.5f, 2);
                 }
                 break;
 
@@ -201,6 +206,7 @@ public class StudentAttackerAgent : Agent
 
                     actionController.Face(dodgeDir);
                     actionController.Dodge(dodgeDir);
+                    _agentUI.UpdateStatusText("Right Dodge", 0.5f, 2);
                 }
                 break;
         }
@@ -317,6 +323,11 @@ public class StudentAttackerAgent : Agent
         if (episodeManager == null)
         {
             episodeManager = FindFirstObjectByType<EpisodeManager>();
+        }
+
+        if (_agentUI == null)
+        {
+            _agentUI = GetComponentInChildren<AgentUI>();
         }
     }
 
