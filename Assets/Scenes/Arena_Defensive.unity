@@ -1980,6 +1980,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 523944886092325560, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1048873685}
+    - targetCorrespondingSourceObject: {fileID: 523944886092325560, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1048873697}
+    - targetCorrespondingSourceObject: {fileID: 523944886092325560, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1048873703}
   m_SourcePrefab: {fileID: 100100000, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
 --- !u!114 &1048873681 stripped
 MonoBehaviour:
@@ -2026,7 +2032,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1048873684}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 961c44ca5da0c8e44b18d7785e377586, type: 3}
   m_Name: 
@@ -2043,6 +2049,46 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 868840365562148866, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
   m_PrefabInstance: {fileID: 1048873680}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1048873697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048873684}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16946c32e569654d859566b4ee79e73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  self: {fileID: 1048873681}
+  target: {fileID: 6082262751175829137}
+  actionController: {fileID: 1048873683}
+  cooldownSystem: {fileID: 1048873682}
+  agentUI: {fileID: 1909116879}
+  closeDistance: 1.6
+  attackDistance: 11.45
+  preferredDistance: 3
+  lowHealthRatio: 0.3
+--- !u!114 &1048873703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048873684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ef6aed4a66dc2a4e81e9074daa8a6b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  self: {fileID: 1048873681}
+  target: {fileID: 6082262751175829137}
+  actionController: {fileID: 1048873683}
+  cooldownSystem: {fileID: 1048873682}
+  attackDistance: 1.8
+  facingAngle: 45
+  lowHealthRatio: 0.35
 --- !u!4 &1054834878 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7075952231625051547, guid: 3d66f178f4d047a469c3b8fd3841cefc, type: 3}
@@ -3444,6 +3490,28 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 319038488118448056, guid: 9a64667b169641a47af670c2e93b175c, type: 3}
   m_PrefabInstance: {fileID: 1909116877}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1909116879 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4498352716910755286, guid: 9a64667b169641a47af670c2e93b175c, type: 3}
+  m_PrefabInstance: {fileID: 1909116877}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4564d0b2f03166e4bb1db034349c0660, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1934860273 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4498352716910755286, guid: 9a64667b169641a47af670c2e93b175c, type: 3}
+  m_PrefabInstance: {fileID: 3257570915162799811}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4564d0b2f03166e4bb1db034349c0660, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1951821113 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7077405961740341404, guid: 9e82653f60510054ebdb924780d30ddd, type: 3}
@@ -4057,6 +4125,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1895096263345252756, guid: aa8891f58e1f068428f4a0a6b7c805c3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6082262751175829141}
+    - targetCorrespondingSourceObject: {fileID: 1895096263345252756, guid: aa8891f58e1f068428f4a0a6b7c805c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6082262751175829153}
   m_SourcePrefab: {fileID: 100100000, guid: aa8891f58e1f068428f4a0a6b7c805c3, type: 3}
 --- !u!114 &6082262751175829137 stripped
 MonoBehaviour:
@@ -4103,7 +4174,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6082262751175829138}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a07cf5ef327044d4db7bd0b354f2a6e7, type: 3}
   m_Name: 
@@ -4116,12 +4187,33 @@ MonoBehaviour:
   dodgePositionOffset: 1
   blockTriggerDistance: 1.6
   blockBaitApproachDistance: 0.5
-  attackDistance: 1.6
+  attackDistance: 2
 --- !u!4 &6082262751175829147 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1227068919629312814, guid: aa8891f58e1f068428f4a0a6b7c805c3, type: 3}
   m_PrefabInstance: {fileID: 6082262751175829136}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6082262751175829153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6082262751175829138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16946c32e569654d859566b4ee79e73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  self: {fileID: 6082262751175829137}
+  target: {fileID: 1048873681}
+  actionController: {fileID: 6082262751175829139}
+  cooldownSystem: {fileID: 6082262751175829140}
+  agentUI: {fileID: 1934860273}
+  closeDistance: 0
+  attackDistance: 2
+  preferredDistance: 0
+  lowHealthRatio: 0.3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
