@@ -2084,9 +2084,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 523944886092325560, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1048873685}
-    - targetCorrespondingSourceObject: {fileID: 523944886092325560, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1048873697}
   m_SourcePrefab: {fileID: 100100000, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
 --- !u!114 &1048873681 stripped
 MonoBehaviour:
@@ -2133,7 +2130,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1048873684}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 961c44ca5da0c8e44b18d7785e377586, type: 3}
   m_Name: 
@@ -2150,27 +2147,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 868840365562148866, guid: dec38366c2ca5144d8418b1b8b8f810d, type: 3}
   m_PrefabInstance: {fileID: 1048873680}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1048873697
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048873684}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e16946c32e569654d859566b4ee79e73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  self: {fileID: 1048873681}
-  target: {fileID: 6082262751175829137}
-  actionController: {fileID: 1048873683}
-  cooldownSystem: {fileID: 1048873682}
-  agentUI: {fileID: 0}
-  closeDistance: 2
-  attackDistance: 2
-  preferredDistance: 1.9
-  lowHealthRatio: 0.4
 --- !u!4 &1054834878 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7075952231625051547, guid: 3d66f178f4d047a469c3b8fd3841cefc, type: 3}
