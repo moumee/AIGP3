@@ -8,6 +8,7 @@ using UnityEngine;
 [RequireComponent(typeof(CombatActionController))]
 public class StudentDefenderAgent : Agent
 {
+    // [컴포넌트 참조] 에이전트와 타겟, 스킬 및 상태 관리를 위한 클래스 연결
     public CombatCharacter self;
     public CombatCharacter opponent;
     public CombatActionController actionController;
@@ -15,12 +16,30 @@ public class StudentDefenderAgent : Agent
     public EpisodeManager episodeManager;
 
     [Header("UI Debug")]
-    public AgentUI agentUI; // UI 스크립트 연결용 변수 추가
+    // 에이전트의 현재 행동을 머리 위에 텍스트로 띄워주기 위한 UI 스크립트
+    public AgentUI agentUI;
 
-    [Header("RL Reward Settings")]
-    [SerializeField] private float preferredDistance = 3.0f;
+    // 거리 유지(preferredDistance) 관련 변수 완전 삭제됨
 
-    // PDF 가이드라인(25p)에 맞춘 2개의 Branch Action 정의
+    [Header("RL Reward Settings - Defense")]
+    // [보상 파라미터 - 수비/회피]
+    [SerializeField] private float rewardSuccessfulBlock = 0.05f; // 적의 공격 타이밍에 맞춰 가드를 올렸을 때의 보상
+    [SerializeField] private float penaltyEmptyBlock = -0.01f; // 적이 때리지도 않는데 허공에 가드를 올릴 때의 감점
+    [SerializeField] private float rewardEffectiveDodge = 0.03f; // 적이 가까울 때 적절히 거리를 벌리는 회피 보상
+    [SerializeField] private float penaltyMeaninglessDodge = -0.01f; // 멀리서 의미 없이 구를 때의 감점
+
+    [Header("RL Reward Settings - Attack")]
+    // [보상 파라미터 - 공격]
+    [SerializeField] private float rewardCounterAttack = 0.1f; // 적의 빈틈(공격 중이 아닐 때)을 정확히 타격한 카운터 보상
+    [SerializeField] private float penaltyBrawl = -0.05f; // 적이 공격 중일 때 같이 주먹을 뻗는(난타전) 무모한 행동에 대한 감점
+    [SerializeField] private float penaltyAirSwing = -0.02f; // 사거리 밖에서 헛스윙을 할 때의 감점
+
+    [Header("RL Reward Settings - Health")]
+    // [보상 파라미터 - 체력] 실제 체력 증감에 따른 최종적인 승패 보상 배율
+    [SerializeField] private float selfDamagePenaltyMultiplier = 1.0f;
+    [SerializeField] private float opponentDamageRewardMultiplier = 1.0f;
+
+    // [행동 정의] PDF 가이드라인(25p)에 맞춘 2개의 Branch Action
     private const int MoveNone = 0;
     private const int MoveForward = 1;
     private const int MoveBackward = 2;
@@ -32,10 +51,11 @@ public class StudentDefenderAgent : Agent
     private const int SkillBlock = 2;
     private const int SkillDodge = 3;
 
-    // 보상 계산을 위한 이전 체력 저장용 변수
+    // [상태 저장용 변수] 체력 변화를 감지하여 보상을 주기 위해 '이전 스텝의 체력'을 기억하는 변수
     private float lastSelfHealthRatio;
     private float lastOpponentHealthRatio;
 
+    // 에이전트가 처음 생성될 때 1회 호출됨
     public override void Initialize()
     {
         FillDefaultReferences();
@@ -46,44 +66,37 @@ public class StudentDefenderAgent : Agent
         FillDefaultReferences();
     }
 
+    // 매 에피소드(라운드)가 새로 시작될 때마다 호출됨
     public override void OnEpisodeBegin()
     {
-        // 매 에피소드 시작 시 체력 비율 초기화
         lastSelfHealthRatio = self.CurrentHealthRatio;
         lastOpponentHealthRatio = opponent.CurrentHealthRatio;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // 1~2. 양측 체력 비율 (2개)
         sensor.AddObservation(self.CurrentHealthRatio);
         sensor.AddObservation(opponent.CurrentHealthRatio);
 
-        // 3~5. 거리 및 방향 정보 (3개)
         Vector3 offset = opponent.transform.position - transform.position;
         offset.y = 0f;
         float distance = offset.magnitude;
 
-        // 거리를 0~1 사이로 정규화 (최대 10유닛 기준)
         sensor.AddObservation(Mathf.Clamp01(distance / 10f));
 
-        // 타겟 방향을 에이전트의 로컬 좌표계 기준으로 변환하여 관측
         Vector3 dir = distance > 0.001f ? offset.normalized : transform.forward;
         Vector3 localDir = transform.InverseTransformDirection(dir);
         sensor.AddObservation(localDir.x);
         sensor.AddObservation(localDir.z);
 
-        // 6~8. 나의 쿨타임 상태 (3개)
         sensor.AddObservation(cooldownSystem.IsAttackReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsBlockReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsDodgeReady() ? 1f : 0f);
 
-        // 9~11. 상대의 쿨타임 상태 (3개)
         sensor.AddObservation(opponent.CooldownSystem.IsAttackReady() ? 1f : 0f);
         sensor.AddObservation(opponent.CooldownSystem.IsBlockReady() ? 1f : 0f);
         sensor.AddObservation(opponent.CooldownSystem.IsDodgeReady() ? 1f : 0f);
 
-        // 12~15. 현재 공격/방어 액션 상태 (4개)
         sensor.AddObservation(actionController.IsAttacking ? 1f : 0f);
         sensor.AddObservation(actionController.IsBlocking ? 1f : 0f);
         sensor.AddObservation(opponent.ActionController.IsAttacking ? 1f : 0f);
@@ -95,15 +108,12 @@ public class StudentDefenderAgent : Agent
         int moveAction = actions.DiscreteActions[0];
         int skillAction = actions.DiscreteActions[1];
 
-        // 타겟을 항상 바라보도록 고정
         Vector3 directionToTarget = GetDirectionToTarget();
         actionController.Face(directionToTarget);
 
-        // UI 조건 판단을 위한 현재 상태 계산
         float distance = GetHorizontalOffsetToTarget().magnitude;
         bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
-        // 1. 이동 명령 수행 (Branch 0)
         Vector3 moveDir = Vector3.zero;
         switch (moveAction)
         {
@@ -114,20 +124,17 @@ public class StudentDefenderAgent : Agent
         }
         actionController.Move(moveDir);
 
-        // 스킬 없이 이동만 할 때의 UI 출력 (우선순위 1)
         if (skillAction == SkillNone && moveAction != MoveNone && agentUI != null)
         {
             agentUI.UpdateStatusText("Maintain Distance", 0.5f, 1);
         }
 
-        // 2. 스킬 명령 수행 (Branch 1) 및 UI 출력
         switch (skillAction)
         {
             case SkillAttack:
                 actionController.Attack();
                 if (agentUI != null)
                 {
-                    // 상대가 공격 중이 아니고 거리가 가까울 때는 카운터 어택으로 판단
                     if (distance <= 2.2f && !isOpponentAttacking)
                         agentUI.UpdateStatusText("Counter Attack!", 0.5f, 4);
                     else
@@ -147,7 +154,6 @@ public class StudentDefenderAgent : Agent
                 actionController.Dodge(-directionToTarget);
                 if (agentUI != null)
                 {
-                    // 체력이 30% 이하일 때 회피하면 긴급 회피로 판단
                     if (self.CurrentHealthRatio <= 0.3f)
                         agentUI.UpdateStatusText("Emergency Dodge!", 0.5f, 5);
                     else
@@ -156,7 +162,6 @@ public class StudentDefenderAgent : Agent
                 break;
         }
 
-        // 3. 수비형(Defender) 전략에 맞춘 보상 부여
         AssignDefenderRewards(skillAction);
     }
 
@@ -165,57 +170,52 @@ public class StudentDefenderAgent : Agent
         float distance = GetHorizontalOffsetToTarget().magnitude;
         bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
-        if (distance >= preferredDistance - 0.5f && distance <= preferredDistance + 0.5f)
-        {
-            AddReward(0.001f);
-        }
-        else if (distance < 1.5f)
-        {
-            AddReward(-0.002f);
-        }
+        // [전략 1] 거리 유지 로직 완전 삭제됨
 
+        // [핵심 전략 2] 방어 및 회피 타이밍 학습
         if (skillAction == SkillBlock)
         {
             if (isOpponentAttacking && distance <= 2.5f)
-                AddReward(0.05f);
+                AddReward(rewardSuccessfulBlock);
             else
-                AddReward(-0.01f);
+                AddReward(penaltyEmptyBlock);
         }
         else if (skillAction == SkillDodge)
         {
             if (distance <= 2.0f)
-                AddReward(0.03f);
+                AddReward(rewardEffectiveDodge);
             else
-                AddReward(-0.01f);
+                AddReward(penaltyMeaninglessDodge);
         }
 
-        // [핵심 전략 3] 카운터 공격 (허공 스윙 페널티 추가)
+        // [핵심 전략 3] 스마트한 공격 (카운터 유도 및 헛스윙 방지)
         if (skillAction == SkillAttack)
         {
             if (distance <= 2.2f)
             {
                 if (!isOpponentAttacking)
-                    AddReward(0.1f); // 유효 거리 내 빈틈 타격 시 큰 칭찬 (카운터)
+                    AddReward(rewardCounterAttack);
                 else
-                    AddReward(-0.05f); // 유효 거리 내 난타전 맞불 시 페널티
+                    AddReward(penaltyBrawl);
             }
             else
             {
-                AddReward(-0.02f); // [핵심 수정] 사거리 밖에서 허공에 헛스윙 시 페널티 부여
+                AddReward(penaltyAirSwing);
             }
         }
 
+        // [핵심 전략 4] 실제 체력 증감에 따른 절대적 결과 보상
         float selfDamageTaken = lastSelfHealthRatio - self.CurrentHealthRatio;
         if (selfDamageTaken > 0)
         {
-            AddReward(-selfDamageTaken * 1.0f);
+            AddReward(-selfDamageTaken * selfDamagePenaltyMultiplier);
         }
         lastSelfHealthRatio = self.CurrentHealthRatio;
 
         float oppDamageTaken = lastOpponentHealthRatio - opponent.CurrentHealthRatio;
         if (oppDamageTaken > 0)
         {
-            AddReward(oppDamageTaken * 1.0f);
+            AddReward(oppDamageTaken * opponentDamageRewardMultiplier);
         }
         lastOpponentHealthRatio = opponent.CurrentHealthRatio;
     }
@@ -240,6 +240,7 @@ public class StudentDefenderAgent : Agent
         if (actionController == null) actionController = GetComponent<CombatActionController>();
         if (cooldownSystem == null) cooldownSystem = GetComponent<CooldownSystem>();
         if (episodeManager == null) episodeManager = FindFirstObjectByType<EpisodeManager>();
+
+        if (agentUI == null) agentUI = GetComponentInChildren<AgentUI>();
     }
 }
-        // AgentUI가 컴포넌트에 연결되어 있지 않다면 자식 오브젝트에서 자동으로 찾아오도록
