@@ -17,21 +17,21 @@ public class StudentDefenderAgent : Agent
     [Header("RL Reward Settings")]
     [SerializeField] private float preferredDistance = 3.0f;
 
-    // PDF °¡ÀÌµå¶óÀÎ(25p)¿¡ ¸ÂÃá 2°³ÀÇ Branch Action Á¤ÀÇ
-    // Branch 0: ÀÌµ¿ (0: Á¤Áö, 1: ÀüÁø, 2: ÈÄÅğ, 3: ÁÂÀÌµ¿, 4: ¿ìÀÌµ¿)
+    // PDF ê°€ì´ë“œë¼ì¸(25p)ì— ë§ì¶˜ 2ê°œì˜ Branch Action ì •ì˜
+    // Branch 0: ì´ë™ (0: ì •ì§€, 1: ì „ì§„, 2: í›„í‡´, 3: ì¢Œì´ë™, 4: ìš°ì´ë™)
     private const int MoveNone = 0;
     private const int MoveForward = 1;
     private const int MoveBackward = 2;
     private const int MoveLeft = 3;
     private const int MoveRight = 4;
 
-    // Branch 1: ÀüÅõ Çàµ¿ (0: ´ë±â, 1: °ø°İ, 2: ¹æ¾î, 3: È¸ÇÇ)
+    // Branch 1: ì „íˆ¬ í–‰ë™ (0: ëŒ€ê¸°, 1: ê³µê²©, 2: ë°©ì–´, 3: íšŒí”¼)
     private const int SkillNone = 0;
     private const int SkillAttack = 1;
     private const int SkillBlock = 2;
     private const int SkillDodge = 3;
 
-    // º¸»ó °è»êÀ» À§ÇÑ ÀÌÀü Ã¼·Â ÀúÀå¿ë º¯¼ö
+    // ë³´ìƒ ê³„ì‚°ì„ ìœ„í•œ ì´ì „ ì²´ë ¥ ì €ì¥ìš© ë³€ìˆ˜
     private float lastSelfHealthRatio;
     private float lastOpponentHealthRatio;
 
@@ -47,44 +47,44 @@ public class StudentDefenderAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        // ¸Å ¿¡ÇÇ¼Òµå ½ÃÀÛ ½Ã Ã¼·Â ºñÀ² ÃÊ±âÈ­
+        // ë§¤ ì—í”¼ì†Œë“œ ì‹œì‘ ì‹œ ì²´ë ¥ ë¹„ìœ¨ ì´ˆê¸°í™”
         lastSelfHealthRatio = self.CurrentHealthRatio;
         lastOpponentHealthRatio = opponent.CurrentHealthRatio;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // [ÃÑ 15°³ÀÇ Observation] - PDFÀÇ Space Size: 15¿Í ¹İµå½Ã ÀÏÄ¡ÇØ¾ß ÇÔ
+        // [ì´ 15ê°œì˜ Observation] - PDFì˜ Space Size: 15ì™€ ë°˜ë“œì‹œ ì¼ì¹˜í•´ì•¼ í•¨
 
-        // 1~2. ¾çÃø Ã¼·Â ºñÀ² (2°³)
+        // 1~2. ì–‘ì¸¡ ì²´ë ¥ ë¹„ìœ¨ (2ê°œ)
         sensor.AddObservation(self.CurrentHealthRatio);
         sensor.AddObservation(opponent.CurrentHealthRatio);
 
-        // 3~5. °Å¸® ¹× ¹æÇâ Á¤º¸ (3°³)
+        // 3~5. ê±°ë¦¬ ë° ë°©í–¥ ì •ë³´ (3ê°œ)
         Vector3 offset = opponent.transform.position - transform.position;
         offset.y = 0f;
         float distance = offset.magnitude;
 
-        // °Å¸®¸¦ 0~1 »çÀÌ·Î Á¤±ÔÈ­ (ÃÖ´ë 10À¯´Ö ±âÁØ)
+        // ê±°ë¦¬ë¥¼ 0~1 ì‚¬ì´ë¡œ ì •ê·œí™” (ìµœëŒ€ 10ìœ ë‹› ê¸°ì¤€)
         sensor.AddObservation(Mathf.Clamp01(distance / 10f));
 
-        // Å¸°Ù ¹æÇâÀ» ¿¡ÀÌÀüÆ®ÀÇ ·ÎÄÃ ÁÂÇ¥°è ±âÁØÀ¸·Î º¯È¯ÇÏ¿© °üÃø (ÇĞ½À È¿À² »ó½Â)
+        // íƒ€ê²Ÿ ë°©í–¥ì„ ì—ì´ì „íŠ¸ì˜ ë¡œì»¬ ì¢Œí‘œê³„ ê¸°ì¤€ìœ¼ë¡œ ë³€í™˜í•˜ì—¬ ê´€ì¸¡ (í•™ìŠµ íš¨ìœ¨ ìƒìŠ¹)
         Vector3 dir = distance > 0.001f ? offset.normalized : transform.forward;
         Vector3 localDir = transform.InverseTransformDirection(dir);
         sensor.AddObservation(localDir.x);
         sensor.AddObservation(localDir.z);
 
-        // 6~8. ³ªÀÇ ÄğÅ¸ÀÓ »óÅÂ (3°³) - ÁØºñµÇ¾úÀ¸¸é 1, ¾Æ´Ï¸é 0
+        // 6~8. ë‚˜ì˜ ì¿¨íƒ€ì„ ìƒíƒœ (3ê°œ) - ì¤€ë¹„ë˜ì—ˆìœ¼ë©´ 1, ì•„ë‹ˆë©´ 0
         sensor.AddObservation(cooldownSystem.IsAttackReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsBlockReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsDodgeReady() ? 1f : 0f);
 
-        // 9~11. »ó´ëÀÇ ÄğÅ¸ÀÓ »óÅÂ (3°³)
+        // 9~11. ìƒëŒ€ì˜ ì¿¨íƒ€ì„ ìƒíƒœ (3ê°œ)
         sensor.AddObservation(opponent.CooldownSystem.IsAttackReady() ? 1f : 0f);
         sensor.AddObservation(opponent.CooldownSystem.IsBlockReady() ? 1f : 0f);
         sensor.AddObservation(opponent.CooldownSystem.IsDodgeReady() ? 1f : 0f);
 
-        // 12~15. ÇöÀç °ø°İ/¹æ¾î ¾×¼Ç »óÅÂ (4°³)
+        // 12~15. í˜„ì¬ ê³µê²©/ë°©ì–´ ì•¡ì…˜ ìƒíƒœ (4ê°œ)
         sensor.AddObservation(actionController.IsAttacking ? 1f : 0f);
         sensor.AddObservation(actionController.IsBlocking ? 1f : 0f);
         sensor.AddObservation(opponent.ActionController.IsAttacking ? 1f : 0f);
@@ -96,11 +96,11 @@ public class StudentDefenderAgent : Agent
         int moveAction = actions.DiscreteActions[0];
         int skillAction = actions.DiscreteActions[1];
 
-        // Å¸°ÙÀ» Ç×»ó ¹Ù¶óº¸µµ·Ï °íÁ¤ (BTÀÇ FaceTarget ¿ªÇÒ)
+        // íƒ€ê²Ÿì„ í•­ìƒ ë°”ë¼ë³´ë„ë¡ ê³ ì • (BTì˜ FaceTarget ì—­í• )
         Vector3 directionToTarget = GetDirectionToTarget();
         actionController.Face(directionToTarget);
 
-        // 1. ÀÌµ¿ ¸í·É ¼öÇà (Branch 0)
+        // 1. ì´ë™ ëª…ë ¹ ìˆ˜í–‰ (Branch 0)
         Vector3 moveDir = Vector3.zero;
         switch (moveAction)
         {
@@ -111,7 +111,7 @@ public class StudentDefenderAgent : Agent
         }
         actionController.Move(moveDir);
 
-        // 2. ½ºÅ³ ¸í·É ¼öÇà (Branch 1)
+        // 2. ìŠ¤í‚¬ ëª…ë ¹ ìˆ˜í–‰ (Branch 1)
         switch (skillAction)
         {
             case SkillAttack:
@@ -121,11 +121,11 @@ public class StudentDefenderAgent : Agent
                 actionController.Block(directionToTarget);
                 break;
             case SkillDodge:
-                actionController.Dodge(-directionToTarget); // µÚ·Î ±ä±Ş È¸ÇÇ
+                actionController.Dodge(-directionToTarget); // ë’¤ë¡œ ê¸´ê¸‰ íšŒí”¼
                 break;
         }
 
-        // 3. ¼öºñÇü(Defender) Àü·«¿¡ ¸ÂÃá º¸»ó ºÎ¿©
+        // 3. ìˆ˜ë¹„í˜•(Defender) ì „ëµì— ë§ì¶˜ ë³´ìƒ ë¶€ì—¬
         AssignDefenderRewards(skillAction);
     }
 
@@ -134,53 +134,53 @@ public class StudentDefenderAgent : Agent
         float distance = GetHorizontalOffsetToTarget().magnitude;
         bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
-        // [ÇÙ½É Àü·« 1] °Å¸® À¯Áö (BTÀÇ MaintainDistance ¸ğ¹æ)
+        // [í•µì‹¬ ì „ëµ 1] ê±°ë¦¬ ìœ ì§€ (BTì˜ MaintainDistance ëª¨ë°©)
         if (distance >= preferredDistance - 0.5f && distance <= preferredDistance + 0.5f)
         {
-            AddReward(0.001f); // ¼±È£ °Å¸®(3.0f) À¯Áö ½Ã Áö¼ÓÀûÀÎ ÄªÂù
+            AddReward(0.001f); // ì„ í˜¸ ê±°ë¦¬(3.0f) ìœ ì§€ ì‹œ ì§€ì†ì ì¸ ì¹­ì°¬
         }
         else if (distance < 1.5f)
         {
-            AddReward(-0.002f); // ³Ê¹« °¡±îÀÌ ºÙÀ¸¸é Æä³ÎÆ¼ (¾Æ¿ôÆÄÀÌÅÍ ¼ºÇâ ºÎ¿©)
+            AddReward(-0.002f); // ë„ˆë¬´ ê°€ê¹Œì´ ë¶™ìœ¼ë©´ í˜ë„í‹° (ì•„ì›ƒíŒŒì´í„° ì„±í–¥ ë¶€ì—¬)
         }
 
-        // [ÇÙ½É Àü·« 2] ¼öºñ ¹× È¸ÇÇ ÆÇ´Ü (BTÀÇ CanBlockIncomingAttack, CanDodge ¸ğ¹æ)
+        // [í•µì‹¬ ì „ëµ 2] ìˆ˜ë¹„ ë° íšŒí”¼ íŒë‹¨ (BTì˜ CanBlockIncomingAttack, CanDodge ëª¨ë°©)
         if (skillAction == SkillBlock)
         {
             if (isOpponentAttacking && distance <= 2.5f)
-                AddReward(0.05f); // ÀûÀÇ °ø°İ Å¸ÀÌ¹Ö¿¡ °¡µå ¿Ã¸®¸é ÄªÂù
+                AddReward(0.05f); // ì ì˜ ê³µê²© íƒ€ì´ë°ì— ê°€ë“œ ì˜¬ë¦¬ë©´ ì¹­ì°¬
             else
-                AddReward(-0.01f); // Çã°ø¿¡ °¡µå ¿Ã¸®¸é Æä³ÎÆ¼
+                AddReward(-0.01f); // í—ˆê³µì— ê°€ë“œ ì˜¬ë¦¬ë©´ í˜ë„í‹°
         }
         else if (skillAction == SkillDodge)
         {
             if (distance <= 2.0f)
-                AddReward(0.03f); // ÀûÀÌ °¡±î¿ï ¶§ °Å¸®¸¦ ¹ú¸®´Â È¸ÇÇ´Â ÄªÂù
+                AddReward(0.03f); // ì ì´ ê°€ê¹Œìš¸ ë•Œ ê±°ë¦¬ë¥¼ ë²Œë¦¬ëŠ” íšŒí”¼ëŠ” ì¹­ì°¬
             else
-                AddReward(-0.01f); // ¸Ö¸®¼­ ÀÇ¹Ì ¾øÀÌ ±¸¸£¸é Æä³ÎÆ¼
+                AddReward(-0.01f); // ë©€ë¦¬ì„œ ì˜ë¯¸ ì—†ì´ êµ¬ë¥´ë©´ í˜ë„í‹°
         }
 
-        // [ÇÙ½É Àü·« 3] Ä«¿îÅÍ °ø°İ (BTÀÇ CanCounterAttack ¸ğ¹æ)
+        // [í•µì‹¬ ì „ëµ 3] ì¹´ìš´í„° ê³µê²© (BTì˜ CanCounterAttack ëª¨ë°©)
         if (skillAction == SkillAttack)
         {
             if (distance <= 2.2f && !isOpponentAttacking)
-                AddReward(0.1f); // ÀûÀÌ °ø°İ ÁßÀÌ ¾Æ´Ñ ºóÆ´À» Å¸°İÇÏ¸é Å« ÄªÂù (Ä«¿îÅÍ)
+                AddReward(0.1f); // ì ì´ ê³µê²© ì¤‘ì´ ì•„ë‹Œ ë¹ˆí‹ˆì„ íƒ€ê²©í•˜ë©´ í° ì¹­ì°¬ (ì¹´ìš´í„°)
             else if (isOpponentAttacking)
-                AddReward(-0.05f); // ÀûÀÌ °ø°İ ÁßÀÎµ¥ ³­Å¸Àü ¸ÂºÒÀ» ³õÀ¸¸é Æä³ÎÆ¼
+                AddReward(-0.05f); // ì ì´ ê³µê²© ì¤‘ì¸ë° ë‚œíƒ€ì „ ë§ë¶ˆì„ ë†“ìœ¼ë©´ í˜ë„í‹°
         }
 
-        // [ÇÙ½É Àü·« 4] ½ÇÁ¦ Ã¼·Â Áõ°¨¿¡ µû¸¥ Àı´ëÀû º¸»ó/Æä³ÎÆ¼
+        // [í•µì‹¬ ì „ëµ 4] ì‹¤ì œ ì²´ë ¥ ì¦ê°ì— ë”°ë¥¸ ì ˆëŒ€ì  ë³´ìƒ/í˜ë„í‹°
         float selfDamageTaken = lastSelfHealthRatio - self.CurrentHealthRatio;
         if (selfDamageTaken > 0)
         {
-            AddReward(-selfDamageTaken * 1.0f); // ³»°¡ µ¥¹ÌÁö¸¦ ÀÔÀ¸¸é Å« Æä³ÎÆ¼
+            AddReward(-selfDamageTaken * 1.0f); // ë‚´ê°€ ë°ë¯¸ì§€ë¥¼ ì…ìœ¼ë©´ í° í˜ë„í‹°
         }
         lastSelfHealthRatio = self.CurrentHealthRatio;
 
         float oppDamageTaken = lastOpponentHealthRatio - opponent.CurrentHealthRatio;
         if (oppDamageTaken > 0)
         {
-            AddReward(oppDamageTaken * 1.0f); // »ó´ë¿¡°Ô µ¥¹ÌÁö¸¦ ÁÖ¸é Å« º¸»ó
+            AddReward(oppDamageTaken * 1.0f); // ìƒëŒ€ì—ê²Œ ë°ë¯¸ì§€ë¥¼ ì£¼ë©´ í° ë³´ìƒ
         }
         lastOpponentHealthRatio = opponent.CurrentHealthRatio;
     }
