@@ -19,7 +19,7 @@ public class StudentDefenderAgent : Agent
     // 에이전트의 현재 행동을 머리 위에 텍스트로 띄워주기 위한 UI 스크립트
     public AgentUI agentUI;
 
-    // 거리 유지(preferredDistance) 관련 변수 완전 삭제됨
+    
 
     [Header("RL Reward Settings - Defense")]
     // [보상 파라미터 - 수비/회피]
@@ -55,6 +55,8 @@ public class StudentDefenderAgent : Agent
     private float lastSelfHealthRatio;
     private float lastOpponentHealthRatio;
 
+    // 이동 개선 
+    private Vector3 _currentMoveDir = Vector3.zero;
     // 에이전트가 처음 생성될 때 1회 호출됨
     public override void Initialize()
     {
@@ -122,7 +124,7 @@ public class StudentDefenderAgent : Agent
             case MoveLeft: moveDir = -transform.right; break;
             case MoveRight: moveDir = transform.right; break;
         }
-        actionController.Move(moveDir);
+        _currentMoveDir = moveDir;
 
         if (skillAction == SkillNone && moveAction != MoveNone && agentUI != null)
         {
@@ -170,7 +172,7 @@ public class StudentDefenderAgent : Agent
         float distance = GetHorizontalOffsetToTarget().magnitude;
         bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
-        // [전략 1] 거리 유지 로직 완전 삭제됨
+       
 
         // [핵심 전략 2] 방어 및 회피 타이밍 학습
         if (skillAction == SkillBlock)
@@ -243,4 +245,14 @@ public class StudentDefenderAgent : Agent
 
         if (agentUI == null) agentUI = GetComponentInChildren<AgentUI>();
     }
-}
+
+    
+    private void FixedUpdate()
+    {
+        if (actionController != null)
+        {
+            // 기억해둔 방향으로 매 물리 프레임마다 끊김 없이 밀어주기
+            actionController.Move(_currentMoveDir);
+        }
+    }
+} 
