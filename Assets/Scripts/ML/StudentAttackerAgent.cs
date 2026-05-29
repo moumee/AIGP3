@@ -35,11 +35,11 @@ public class StudentAttackerAgent : Agent
     [SerializeField] private float dodgePositionOffset = 0.8f;
 
     [Header("Reward Tuning - Damage Result")]
-    [Tooltip("상대에게 대미지를 줬을 때 얻는 보상 배율입니다. 값을 키우면 Agent가 공격 성공을 더 중요하게 학습합니다.")]
-    [SerializeField] private float damageToOpponentRewardMultiplier = 2.0f;
+    [Tooltip("상대에게 대미지를 줬을 때 얻는 보상입니다. 값을 키우면 Agent가 공격 성공을 더 중요하게 학습합니다.")]
+    [SerializeField] private float damageToOpponentReward = 0.5f;
 
-    [Tooltip("내가 대미지를 받았을 때 받는 패널티 배율입니다. 값을 키우면 Agent가 피격을 더 강하게 회피하도록 학습합니다.")] 
-    [SerializeField] private float damageToSelfPenaltyMultiplier = 1.5f;
+    [Tooltip("내가 대미지를 받았을 때 받는 패널티입니다.")] 
+    [SerializeField] private float damageToSelfPenalty = -0.5f;
 
     [Header("Reward Tuning - Skill Timing")]
     [Tooltip("상대가 공격 중일 때 dodge 무적 프레임에 진입하면 주는 보상입니다. 값을 키우면 회피 타이밍을 더 중요하게 학습합니다.")]
@@ -229,12 +229,12 @@ public class StudentAttackerAgent : Agent
         // 1. 기본 대미지 주고받기
         if (targetDelta < 0f)
         {
-            AddReward(-targetDelta * damageToOpponentRewardMultiplier);   // 상대에게 대미지 줌  (+)
+            AddReward(damageToOpponentReward);   // 상대에게 대미지 줌  (+)
         }
 
         if (selfDelta < 0f)
         {
-            AddReward(selfDelta * damageToSelfPenaltyMultiplier);         // 내가 대미지 받음    (-)
+            AddReward(damageToSelfPenalty);         // 내가 대미지 받음    (-)
         }
 
         // 2. BT: ShouldDodge → LeftDodge / RightDodge
