@@ -1,6 +1,6 @@
 default_settings: null
 behaviors:
-  CombatAgent:
+  DefensiveCombatAgent:
     trainer_type: ppo
     hyperparameters:
       batch_size: 64
