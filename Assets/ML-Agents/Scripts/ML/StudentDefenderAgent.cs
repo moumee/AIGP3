@@ -14,18 +14,19 @@ public class StudentDefenderAgent : Agent
     public CooldownSystem cooldownSystem;
     public EpisodeManager episodeManager;
 
+    [Header("UI Debug")]
+    public AgentUI agentUI; // UI 스크립트 연결용 변수 추가
+
     [Header("RL Reward Settings")]
     [SerializeField] private float preferredDistance = 3.0f;
 
     // PDF 가이드라인(25p)에 맞춘 2개의 Branch Action 정의
-    // Branch 0: 이동 (0: 정지, 1: 전진, 2: 후퇴, 3: 좌이동, 4: 우이동)
     private const int MoveNone = 0;
     private const int MoveForward = 1;
     private const int MoveBackward = 2;
     private const int MoveLeft = 3;
     private const int MoveRight = 4;
 
-    // Branch 1: 전투 행동 (0: 대기, 1: 공격, 2: 방어, 3: 회피)
     private const int SkillNone = 0;
     private const int SkillAttack = 1;
     private const int SkillBlock = 2;
@@ -54,8 +55,6 @@ public class StudentDefenderAgent : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // [총 15개의 Observation] - PDF의 Space Size: 15와 반드시 일치해야 함
-
         // 1~2. 양측 체력 비율 (2개)
         sensor.AddObservation(self.CurrentHealthRatio);
         sensor.AddObservation(opponent.CurrentHealthRatio);
@@ -68,13 +67,13 @@ public class StudentDefenderAgent : Agent
         // 거리를 0~1 사이로 정규화 (최대 10유닛 기준)
         sensor.AddObservation(Mathf.Clamp01(distance / 10f));
 
-        // 타겟 방향을 에이전트의 로컬 좌표계 기준으로 변환하여 관측 (학습 효율 상승)
+        // 타겟 방향을 에이전트의 로컬 좌표계 기준으로 변환하여 관측
         Vector3 dir = distance > 0.001f ? offset.normalized : transform.forward;
         Vector3 localDir = transform.InverseTransformDirection(dir);
         sensor.AddObservation(localDir.x);
         sensor.AddObservation(localDir.z);
 
-        // 6~8. 나의 쿨타임 상태 (3개) - 준비되었으면 1, 아니면 0
+        // 6~8. 나의 쿨타임 상태 (3개)
         sensor.AddObservation(cooldownSystem.IsAttackReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsBlockReady() ? 1f : 0f);
         sensor.AddObservation(cooldownSystem.IsDodgeReady() ? 1f : 0f);
@@ -96,9 +95,13 @@ public class StudentDefenderAgent : Agent
         int moveAction = actions.DiscreteActions[0];
         int skillAction = actions.DiscreteActions[1];
 
-        // 타겟을 항상 바라보도록 고정 (BT의 FaceTarget 역할)
+        // 타겟을 항상 바라보도록 고정
         Vector3 directionToTarget = GetDirectionToTarget();
         actionController.Face(directionToTarget);
+
+        // UI 조건 판단을 위한 현재 상태 계산
+        float distance = GetHorizontalOffsetToTarget().magnitude;
+        bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
         // 1. 이동 명령 수행 (Branch 0)
         Vector3 moveDir = Vector3.zero;
@@ -111,17 +114,45 @@ public class StudentDefenderAgent : Agent
         }
         actionController.Move(moveDir);
 
-        // 2. 스킬 명령 수행 (Branch 1)
+        // 스킬 없이 이동만 할 때의 UI 출력 (우선순위 1)
+        if (skillAction == SkillNone && moveAction != MoveNone && agentUI != null)
+        {
+            agentUI.UpdateStatusText("Maintain Distance", 0.5f, 1);
+        }
+
+        // 2. 스킬 명령 수행 (Branch 1) 및 UI 출력
         switch (skillAction)
         {
             case SkillAttack:
                 actionController.Attack();
+                if (agentUI != null)
+                {
+                    // 상대가 공격 중이 아니고 거리가 가까울 때는 카운터 어택으로 판단
+                    if (distance <= 2.2f && !isOpponentAttacking)
+                        agentUI.UpdateStatusText("Counter Attack!", 0.5f, 4);
+                    else
+                        agentUI.UpdateStatusText("Attack!", 0.5f, 3);
+                }
                 break;
+
             case SkillBlock:
                 actionController.Block(directionToTarget);
+                if (agentUI != null)
+                {
+                    agentUI.UpdateStatusText("Blocking!", 0.5f, 4);
+                }
                 break;
+
             case SkillDodge:
-                actionController.Dodge(-directionToTarget); // 뒤로 긴급 회피
+                actionController.Dodge(-directionToTarget);
+                if (agentUI != null)
+                {
+                    // 체력이 30% 이하일 때 회피하면 긴급 회피로 판단
+                    if (self.CurrentHealthRatio <= 0.3f)
+                        agentUI.UpdateStatusText("Emergency Dodge!", 0.5f, 5);
+                    else
+                        agentUI.UpdateStatusText("Dodge!", 0.5f, 3);
+                }
                 break;
         }
 
@@ -134,53 +165,57 @@ public class StudentDefenderAgent : Agent
         float distance = GetHorizontalOffsetToTarget().magnitude;
         bool isOpponentAttacking = opponent.ActionController.IsAttacking;
 
-        // [핵심 전략 1] 거리 유지 (BT의 MaintainDistance 모방)
         if (distance >= preferredDistance - 0.5f && distance <= preferredDistance + 0.5f)
         {
-            AddReward(0.001f); // 선호 거리(3.0f) 유지 시 지속적인 칭찬
+            AddReward(0.001f);
         }
         else if (distance < 1.5f)
         {
-            AddReward(-0.002f); // 너무 가까이 붙으면 페널티 (아웃파이터 성향 부여)
+            AddReward(-0.002f);
         }
 
-        // [핵심 전략 2] 수비 및 회피 판단 (BT의 CanBlockIncomingAttack, CanDodge 모방)
         if (skillAction == SkillBlock)
         {
             if (isOpponentAttacking && distance <= 2.5f)
-                AddReward(0.05f); // 적의 공격 타이밍에 가드 올리면 칭찬
+                AddReward(0.05f);
             else
-                AddReward(-0.01f); // 허공에 가드 올리면 페널티
+                AddReward(-0.01f);
         }
         else if (skillAction == SkillDodge)
         {
             if (distance <= 2.0f)
-                AddReward(0.03f); // 적이 가까울 때 거리를 벌리는 회피는 칭찬
+                AddReward(0.03f);
             else
-                AddReward(-0.01f); // 멀리서 의미 없이 구르면 페널티
+                AddReward(-0.01f);
         }
 
-        // [핵심 전략 3] 카운터 공격 (BT의 CanCounterAttack 모방)
+        // [핵심 전략 3] 카운터 공격 (허공 스윙 페널티 추가)
         if (skillAction == SkillAttack)
         {
-            if (distance <= 2.2f && !isOpponentAttacking)
-                AddReward(0.1f); // 적이 공격 중이 아닌 빈틈을 타격하면 큰 칭찬 (카운터)
-            else if (isOpponentAttacking)
-                AddReward(-0.05f); // 적이 공격 중인데 난타전 맞불을 놓으면 페널티
+            if (distance <= 2.2f)
+            {
+                if (!isOpponentAttacking)
+                    AddReward(0.1f); // 유효 거리 내 빈틈 타격 시 큰 칭찬 (카운터)
+                else
+                    AddReward(-0.05f); // 유효 거리 내 난타전 맞불 시 페널티
+            }
+            else
+            {
+                AddReward(-0.02f); // [핵심 수정] 사거리 밖에서 허공에 헛스윙 시 페널티 부여
+            }
         }
 
-        // [핵심 전략 4] 실제 체력 증감에 따른 절대적 보상/페널티
         float selfDamageTaken = lastSelfHealthRatio - self.CurrentHealthRatio;
         if (selfDamageTaken > 0)
         {
-            AddReward(-selfDamageTaken * 1.0f); // 내가 데미지를 입으면 큰 페널티
+            AddReward(-selfDamageTaken * 1.0f);
         }
         lastSelfHealthRatio = self.CurrentHealthRatio;
 
         float oppDamageTaken = lastOpponentHealthRatio - opponent.CurrentHealthRatio;
         if (oppDamageTaken > 0)
         {
-            AddReward(oppDamageTaken * 1.0f); // 상대에게 데미지를 주면 큰 보상
+            AddReward(oppDamageTaken * 1.0f);
         }
         lastOpponentHealthRatio = opponent.CurrentHealthRatio;
     }
@@ -207,3 +242,4 @@ public class StudentDefenderAgent : Agent
         if (episodeManager == null) episodeManager = FindFirstObjectByType<EpisodeManager>();
     }
 }
+        // AgentUI가 컴포넌트에 연결되어 있지 않다면 자식 오브젝트에서 자동으로 찾아오도록
