@@ -17,6 +17,14 @@ public class StudentDefenderAgent : Agent
     [Header("RL Reward Settings")]
     [SerializeField] private float preferredDistance = 3.0f;
 
+    [Header("승/패 최종 보상 (Episode 종료 시)")]
+    [Tooltip("상대를 쓰러뜨려 이겼을 때 주는 큰 보상")]
+    [SerializeField] private float opponentDeathReward = 1f;
+    [Tooltip("내가 쓰러져 졌을 때 주는 큰 페널티")]
+    [SerializeField] private float selfDeathPenalty = -1f;
+    [Tooltip("시간 초과로 끝났을 때 보상. 0=무승부. 방어형은 살짝 +를 주면 생존을 유도할 수 있으나, 너무 크면 시간만 끄는 행동을 학습함")]
+    [SerializeField] private float timeoutReward = 0f;
+
     // PDF 가이드라인(25p)에 맞춘 2개의 Branch Action 정의
     // Branch 0: 이동 (0: 정지, 1: 전진, 2: 후퇴, 3: 좌이동, 4: 우이동)
     private const int MoveNone = 0;
@@ -34,6 +42,9 @@ public class StudentDefenderAgent : Agent
     // 보상 계산을 위한 이전 체력 저장용 변수
     private float lastSelfHealthRatio;
     private float lastOpponentHealthRatio;
+
+    // 에피소드가 끝나고 리셋되는 동안 행동/보상 계산을 멈추기 위한 플래그
+    private bool waitingForEpisodeReset;
 
     public override void Initialize()
     {
@@ -93,6 +104,19 @@ public class StudentDefenderAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+        // 직전 에피소드가 끝나 EpisodeManager가 캐릭터를 리셋하는 동안에는
+        // 잘못된 상태(죽은 상태 등)로 행동/보상이 계산되지 않도록 잠시 멈춘다.
+        if (waitingForEpisodeReset)
+        {
+            bool managerStillDone = episodeManager != null && episodeManager.IsEpisodeDone();
+            bool someoneStillDead = (self != null && self.IsDead) || (opponent != null && opponent.IsDead);
+            if (managerStillDone || someoneStillDead)
+            {
+                return;
+            }
+            waitingForEpisodeReset = false;
+        }
+
         int moveAction = actions.DiscreteActions[0];
         int skillAction = actions.DiscreteActions[1];
 
@@ -127,6 +151,33 @@ public class StudentDefenderAgent : Agent
 
         // 3. 수비형(Defender) 전략에 맞춘 보상 부여
         AssignDefenderRewards(skillAction);
+
+        // 4. 에피소드 종료 처리 + 승/패 최종 보상
+        //    누가 죽거나 시간이 초과되면 결과에 맞는 보상을 주고 한 판을 끝낸다.
+        //    EndEpisode()를 호출해야 ML-Agents가 "한 판 끝"을 인식하고 학습이 진행된다.
+        if (self.IsDead)
+        {
+            FinishLearningEpisode(selfDeathPenalty);    // 내가 죽음 → 패배 (큰 페널티)
+            return;
+        }
+        if (opponent.IsDead)
+        {
+            FinishLearningEpisode(opponentDeathReward); // 상대가 죽음 → 승리 (큰 보상)
+            return;
+        }
+        if (episodeManager != null && episodeManager.IsEpisodeDone())
+        {
+            FinishLearningEpisode(timeoutReward);       // 시간 초과 → 무승부
+            return;
+        }
+    }
+
+    // 한 판(에피소드)을 마무리한다: 최종 보상을 더하고 ML-Agents에 종료를 알린다.
+    private void FinishLearningEpisode(float finalReward)
+    {
+        AddReward(finalReward);
+        waitingForEpisodeReset = true;
+        EndEpisode();
     }
 
     private void AssignDefenderRewards(int skillAction)
