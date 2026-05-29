@@ -124,14 +124,11 @@ public class StudentBTDefenderStrategy : MonoBehaviour
 
     private bool CanBlockIncomingAttack()
     {
-        // [수정 1] 방어 판단 거리를 1.6f(closeDistance)가 아닌 적의 공격 사거리(attackDistance = 2.0f)로 넓힘
         return IsTargetWithinDistance(attackDistance)
             && cooldownSystem != null
             && cooldownSystem.IsBlockReady()
-            // [수정 2] 무한 루프 버그는 Update()에서 잡았으므로, 다시 상대의 공격 여부를 넓게 예측하도록 복구
-            && (IsTargetAttacking() || IsTargetAttackReady());
+            && IsTargetAttacking(); // 확률 제거, 확실한 반응만!
     }
-
     private bool CanDodgeCloseTarget()
     {
         return IsTargetWithinDistance(closeDistance)
@@ -141,13 +138,12 @@ public class StudentBTDefenderStrategy : MonoBehaviour
 
     private bool CanCounterAttack()
     {
+        // [수정] 상대가 공격 중이 아닐 때만 카운터를 날린다!
+        // 공격형 AI가 공격을 끝내고 쿨타임이 도는 찰나를 노리는 전략입니다.
         return IsTargetWithinDistance(attackDistance)
             && cooldownSystem != null
             && cooldownSystem.IsAttackReady()
-            // [중요] 상대가 공격 중일 때는 막아야 하므로 반격 안 함
-            // [중요] 상대가 공격 모션이 끝난 직후(딜레이)를 노림
-            && !IsTargetAttacking()
-            && !IsTargetAttackReady(); // 상대도 공격 준비가 안 되었을 때 패야 함!
+            && !IsTargetAttacking(); // 공격형 AI가 공격 중이 아닐 때 공격!
     }
 
     // ==========================================
