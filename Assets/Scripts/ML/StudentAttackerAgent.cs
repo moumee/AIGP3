@@ -1,3 +1,4 @@
+using System;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
@@ -79,6 +80,8 @@ public class StudentAttackerAgent : Agent
 
     private AgentUI _agentUI;
 
+    private bool _shouldMove = false;
+
     public override void Initialize()
     {
         FillDefaultReferences();
@@ -155,9 +158,14 @@ public class StudentAttackerAgent : Agent
         // BT의 ApproachTarget / BlockBait 이동에 대응
         if (move == MoveApproach)
         {
-            actionController.Move(DirectionToTarget());
+            _shouldMove = true;
             _agentUI.UpdateStatusText("Move Approach", 0.2f, 0);
         }
+        else if (move == MoveNone)
+        {
+            _shouldMove = false;
+        }
+        
 
         // ── 스킬 ──────────────────────────────────
         switch (skill)
@@ -344,5 +352,13 @@ public class StudentAttackerAgent : Agent
         AddReward(finalReward);
         _waitingForEpisodeReset = true;
         EndEpisode();
+    }
+
+    private void Update()
+    {
+        if (_shouldMove)
+        {
+            actionController.Move(DirectionToTarget());
+        }
     }
 }
