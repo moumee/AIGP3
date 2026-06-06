@@ -1,0 +1,65 @@
+{
+    "AttackerAgent": {
+        "checkpoints": [
+            {
+                "steps": 1399977,
+                "file_path": "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1399977.onnx",
+                "reward": null,
+                "creation_time": 1780565466.6435246,
+                "auxillary_file_paths": [
+                    "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1399977.pt"
+                ]
+            },
+            {
+                "steps": 1599953,
+                "file_path": "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1599953.onnx",
+                "reward": null,
+                "creation_time": 1780565881.265857,
+                "auxillary_file_paths": [
+                    "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1599953.pt"
+                ]
+            },
+            {
+                "steps": 1799938,
+                "file_path": "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1799938.onnx",
+                "reward": 219.53900591935962,
+                "creation_time": 1780566304.0847676,
+                "auxillary_file_paths": [
+                    "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1799938.pt"
+                ]
+            },
+            {
+                "steps": 1999980,
+                "file_path": "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1999980.onnx",
+                "reward": 253.1590069020167,
+                "creation_time": 1780566716.6734934,
+                "auxillary_file_paths": [
+                    "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-1999980.pt"
+                ]
+            },
+            {
+                "steps": 2000044,
+                "file_path": "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-2000044.onnx",
+                "reward": 253.1590069020167,
+                "creation_time": 1780566716.7981503,
+                "auxillary_file_paths": [
+                    "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-2000044.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 2000044,
+            "file_path": "results\\attacker_v3_aggressive\\AttackerAgent.onnx",
+            "reward": 253.1590069020167,
+            "creation_time": 1780566716.7981503,
+            "auxillary_file_paths": [
+                "results\\attacker_v3_aggressive\\AttackerAgent\\AttackerAgent-2000044.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.8.0+cpu"
+    }
+}
